@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вторая страница</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/main.css') }}">
+
+</head>
+
+<body>
+    <form method="post">
+        <select name="user_year">
+            <option disabled selected="selected">Выберите год</option>
+            {% for i in range(0,10):%}
+            {%set date = data - i%}
+            <option>{{ date }}</option>
+            {% endfor %}
+        </select>
+        <select name="user_term">
+            <option disabled selected="selected">Выберите семестр</option>
+            <option>осенний</option>
+            <option>весенний</option>
+        </select>
+        <p><input type="submit" value="Сформировать отчёт"></p>
+
+    </form>
+    <form method="post">
+
+        {% if x %}
+        <p>{{ fileName }}</p>
+        {% endif%}
+
+    </form>
+    <div id="button">
+        <form method="post">
+
+            <p><input type="submit" name="submit_button" value="Посмотреть отчёт"></p>
+
+        </form>
+        <form method="post">
+
+            <p><input type="submit" name="submit_button" value="Скачать отчёт"></p>
+
+        </form>
+        <form method="post" enctype="multipart/form-data">
+            <p><input type="file" name="file" value="1">
+                <input type="submit" name="submit_button" value="Загрузить">
+            </p>
+
+
+        </form>
+    </div>
+
+    <form method="post">
+        <p><input type="submit" value="Загрузить на сервер"></p>
+
+    </form>
+
+</body>
+
+</html>
