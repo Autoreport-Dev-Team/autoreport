@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, redirect, send_from_directory, flash
+from flask import Flask, render_template, request
+from flask import send_from_directory, flash
 from datetime import date
 from docx import Document
 from flask import redirect, url_for
@@ -8,7 +9,8 @@ import mariadb
 import sys
 import os
 import unittest
-#new commit
+import webbrowser
+
 from werkzeug.utils import secure_filename
 from coverage import coverage
 
@@ -54,16 +56,23 @@ def fileName():
         filename = upload_file(request)
         return render_template('main.html', fileName=filename, data=2022, x=True)
 
+    elif request.method == 'POST' and request.form['submit_button'] == "Посмотреть отчёт":
+        filename = upload_file(request)
+        return render_template('main.html', fileName=filename, data=2022, x=True)
+
+def openFile():
+    new = 2
+    url = "app/doc/1.html"
+    webbrowser.open(url, new=new)
 
 # Функция проверки расширения файла
 # Получает название файла, возвращает true, если
 # расширение допустимо, иначе false
 def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-# Функция добавления файла в папку AutoReport
+# Функция добавления загружаемого файла в папку AutoReport
 # На вход получает данные с html
 # Возвращает имя файла в случае успеха, иначе пустую строку
 def upload_file(request):
@@ -100,7 +109,7 @@ def report(yearString, termString):
     year = str(year) + '-' + str(year + 1)
 
     # Начало документа
-    html = '<h1>Формы отчетности студентов за ' + str(term) + ' семестр ' + year + ' уч.г.</h1><br>'
+    html = '<h1>Формы отчетности студентов за '+str(term) + ' семестр ' + year + ' уч.г.</h1><br>'
 
     # Общие строки в документе для всех групп
     tblstart = '<table border="1">'
@@ -109,7 +118,7 @@ def report(yearString, termString):
 
     # Добавление в документ таблицы групп
     for numberGroup in groups:
-        strgroup = '<h2>Гр. ' + str(numberGroup) + '</h2>'
+        strgroup = '<h2>Гр. '+str(numberGroup) + '</h2>'
         strr = strgroup + tblstart + tblhead
         for group in groups[numberGroup]:
             lenExam = len(group['exam'])
@@ -134,11 +143,13 @@ def report(yearString, termString):
 
     new_parser.add_html_to_document(html, document)
 
-    #f = open('static/1.txt', 'w')
-    #f.write(html)
+    f = open('static/1.txt', 'w')
+    f.write(html)
+    f.close()
     nameFile = 'student_reporting_' + str(year) + '_' + str(term) + '_semester.doc'
-    # path = 'doc/student_reporting_' + str(year) + '_' + str(term) + '_semester.doc'
-    #document.save('doc/' + nameFile)
+    # path = 'doc/student_reporting_' + str(year)
+    # + '_' + str(term) + '_semester.doc'
+    document.save('doc/' + nameFile)
     return nameFile
 
 
@@ -147,14 +158,7 @@ def report(yearString, termString):
 # Возвращает лист groups со всеми данными для отчета
 def db(term):
     try:
-        conn = mariadb.connect(
-            user="root",
-            password="lizliz31415",
-            host="127.0.0.1",
-            port=3476,
-            database="AuthoReport"
-
-        )
+        conn = mariadb.connect(user="root", password="lizliz31415", host="127.0.0.1", port=3476, database="AuthoReport")
     except mariadb.Error as e:
         print(f"Error connecting to MariaDB Platform: {e}")
         sys.exit(1)
@@ -166,7 +170,8 @@ def db(term):
     cur.execute("SELECT * FROM tbl_groups;")
     rows = cur.fetchall()
 
-    # Создание листа, который будет хранить данные, передающиеся в модуль отчетности
+    # Создание листа, который будет хранить данные,
+    # передающиеся в модуль отчетности
     groups = defaultdict(list)
 
     # Заполнение листа groups  данными о экзаменах и зачетах
@@ -182,8 +187,8 @@ def db(term):
 
         cur.execute("SELECT nameSubject, diff, elective FROM tbl_link, tbl_subjects where id_group = " + str(
             id_group) + " and tbl_link.id_subject = tbl_subjects.id_subject and (credit = " + str(kurs) + ");")
-        arraysubjectsCredit = cur.fetchall()
 
+        arraysubjectsCredit = cur.fetchall()
         subjectsCredit = defaultdict(list)
         i = 0
         for credit in arraysubjectsCredit:
@@ -203,62 +208,12 @@ def db(term):
 
     return groups
 
+
 cov = coverage(branch=True)
 cov.start()
 
-def matx(one, two):
-    if one is float or one is None or one < 0:
-        return False
-
-    if two is None:
-        return False
-
-    total = 1
-    for x in range(0, int(one)):
-        total = total * two
-    return total
-
 
 class TestDef(unittest.TestCase):
-    def test_one(self):
-        a = 2
-        b = 2
-        self.assertEqual(matx(a, b), 4, "Should be 4")
-
-    def test_two(self):
-        a = 1.5
-        b = 2
-        self.assertEqual(matx(a, b), 2, "Should be false")
-
-    def test_three(self):
-        a = 4
-        b = 4
-        self.assertEqual(matx(a, b), 256, "Should be 256")
-
-    def test_four(self):
-        a = 4
-        b = 100
-        self.assertEqual(matx(a, b), 100000000, "Should be 100000000")
-
-    def test_five(self):
-        a = 5
-        b = 1.5
-        self.assertEqual(matx(a, b), 7.59375, "Should be 7.59375")
-
-    def test_six(self):
-        a = 10
-        b = 1000000000
-        self.assertEqual(matx(a, b), 1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000, "Should be 1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
-
-    def test_seven(self):
-        a = 5
-        b = None
-        self.assertEqual(matx(a, b), False, "Should be false")
-
-    def test_eight(self):
-        a = -1
-        b = 3
-        self.assertEqual(matx(a, b), False, "Should be false")
 
     def test_report(self):
         year1 = "2020"
@@ -274,21 +229,22 @@ class TestDef(unittest.TestCase):
     def test_allowed_file_neg(self):
         self.assertEqual(allowed_file("text.txt"), False, "Should be false")
 
-    # def report_neg(self):
-    #   self.assertEqual(upload_file(), False, "Should be false")
+
+# def report_neg(self):
+#   self.assertEqual(upload_file(), False, "Should be false")
 
 
 if __name__ == "__main__":
-    app.secret_key = os.urandom(24)
-    try:
-        unittest.main()
-    except:
-        pass
-    cov.stop()
-    cov.save()
-    print("\n\nCoverage Report:\n")
-    cov.report()
-    print("HTML version: " + os.path.join("static", "index.html"))
-    cov.html_report(directory='static')
-    cov.erase()
-    # app.run(debug=True)
+    #app.secret_key = os.urandom(24)
+    #try:
+    #    unittest.main()
+    #except Exception:
+    #    pass
+    #cov.stop()
+    #cov.save()
+    #print("\n\nCoverage Report:\n")
+    #cov.report()
+    #print("HTML version: " + os.path.join("static", "index.html"))
+    #cov.html_report(directory='static')
+    #cov.erase()
+    app.run(debug=True)
