@@ -56,9 +56,8 @@ def fileName():
         filename = upload_file(request)
         return render_template('main.html', fileName=filename, data=2022, x=True)
 
-    elif request.method == 'POST' and request.form['submit_button'] == "Посмотреть отчёт":
-        filename = upload_file(request)
-        return render_template('main.html', fileName=filename, data=2022, x=True)
+    #elif request.method == 'POST' and request.form['submit_button'] == "Посмотреть отчёт":
+        
 
 def openFile():
     new = 2
