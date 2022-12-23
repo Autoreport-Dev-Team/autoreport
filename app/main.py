@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request
 from flask import send_from_directory, flash
-from datetime import date
 from docx import Document
 from flask import redirect, url_for
 from htmldocx import HtmlToDocx
@@ -10,6 +9,7 @@ import sys
 import os
 import unittest
 import webbrowser
+import datetime
 
 from werkzeug.utils import secure_filename
 from coverage import coverage
@@ -32,10 +32,11 @@ data = None
 @app.route('/', methods=["POST", "GET"])
 def index():
     global year, term, data
-    data = int(str(date.today()).split("-")[0])
+    data = datetime.date.today().year
     if request.method == 'POST':
         year = request.form['user_year']
         term = request.form['user_term']
+        # FIXME: обработать случаи когда поля пустые
         return redirect(url_for('fileName'))
     return render_template('main.html', data=data)
 
@@ -56,13 +57,14 @@ def fileName():
         filename = upload_file(request)
         return render_template('main.html', fileName=filename, data=2022, x=True)
 
-    #elif request.method == 'POST' and request.form['submit_button'] == "Посмотреть отчёт":
+    # elif request.method == 'POST' and request.form['submit_button'] == "Посмотреть отчёт":
         
 
 def openFile():
     new = 2
     url = "app/doc/1.html"
     webbrowser.open(url, new=new)
+
 
 # Функция проверки расширения файла
 # Получает название файла, возвращает true, если
@@ -93,7 +95,7 @@ def report(yearString, termString):
         return False
     year = int(yearString)
 
-    if termString == "весенний":
+    if termString == "Весенний":
         term = 2
     else:
         term = 1
@@ -216,7 +218,7 @@ class TestDef(unittest.TestCase):
 
     def test_report(self):
         year1 = "2020"
-        term1 = "весенний"
+        term1 = "Весенний"
         self.assertEqual(report(year1, term1), "student_reporting_2020-2021_2_semester.doc", "Should be file name")
 
     def test_report_neg(self):
@@ -234,16 +236,16 @@ class TestDef(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    #app.secret_key = os.urandom(24)
-    #try:
+    # app.secret_key = os.urandom(24)
+    # try:
     #    unittest.main()
-    #except Exception:
+    # except Exception:
     #    pass
-    #cov.stop()
-    #cov.save()
-    #print("\n\nCoverage Report:\n")
-    #cov.report()
-    #print("HTML version: " + os.path.join("static", "index.html"))
-    #cov.html_report(directory='static')
-    #cov.erase()
+    # cov.stop()
+    # cov.save()
+    # print("\n\nCoverage Report:\n")
+    # cov.report()
+    # print("HTML version: " + os.path.join("static", "index.html"))
+    # cov.html_report(directory='static')
+    # cov.erase()
     app.run(debug=True)
