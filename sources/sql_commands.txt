@@ -1,0 +1,12 @@
+create table tbl_links (
+linkId int not null auto_increment,
+dirId int not null,
+subjectId int not null,
+CONSTRAINT dirData FOREIGN KEY(dirId) REFERENCES tbl_directions(dirId),
+CONSTRAINT subjectData FOREIGN KEY (subjectId) REFERENCES tbl_subjects(subjectId),
+primary key(linkId));
+
+create table tbl_subjects(subjectId int not null auto_increment, subjectName varchar(200) not null,  accred varchar(12) not null, semester tinyint(1), pract tinyint(1), primary key(subjectId), unique(subjectName, accred, semester));
+
+create table tbl_directions(dirId int not null auto_increment, dirName varchar(50), adyear int not null, primary key(dirId), unique(dirName, adyear));
+
