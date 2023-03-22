@@ -37,7 +37,7 @@ if (os.path.isfile("config.txt")):
 
     # Залезаем в каждый учебный план, перечисленный в конфиге
     for fname in planFiles:
-        fname = fname.strip()
+        fname = os.path.split(fname.strip())[1]
 
         book = xlrd.open_workbook(filename=fname)  # открываем таблицу эксель
 
