@@ -7,7 +7,7 @@ import requests
 
 import curriculum_getter
 import report_generator
-import report_state
+import report_status
 
 current_file_path = ""
 
@@ -101,7 +101,7 @@ def check_report_state(year: int, semester: int, mode: str, warned=False, use_cu
         elif mode == 'save':
             return generate_report(year, semester, pract_data)
 
-    report_record = report_state.get_status(year, semester)
+    report_record = report_status.get_status(year, semester)
 
     if report_record is None:
         return handle_load_or_save(mode, year, semester, file, pract_data)
@@ -143,7 +143,7 @@ def generate_report(year, semester, pract_data=None):
         if report_generator.report(year, semester, report_path, curriculum_data, pract_data):
             global current_file_path
             current_file_path = report_path
-            report_state.set_status(year, semester, 0, report_path)
+            report_status.set_status(year, semester, 0, report_path)
             return render_template('second_state.html', year=year, semester=semester)
         else:
             return jsonify(
