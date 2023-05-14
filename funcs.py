@@ -1,7 +1,13 @@
+import re
+
 from autoreport_config import CONFIG_PLAN_FILES_PATH
 from docx2pdf import convert
-from flask import send_from_directory
+from flask import send_from_directory, jsonify, render_template
 import requests
+
+import curriculum_getter
+import report_generator
+import report_state
 
 current_file_path = ""
 
@@ -25,10 +31,19 @@ def update_curriculum():
 
     @return: json.
     """
-    with open(CONFIG_PLAN_FILES_PATH, "r") as file:
-        for line in file:
-            # TODO curriculum_importer.py:insertInDataBase(line)
-            pass
+    pattern = r'/.*config\.txt$'
+    match = re.search(pattern, CONFIG_PLAN_FILES_PATH)
+    if not match:
+        return jsonify(
+            {"success": False, "errortype": "config file access", "message": "Не найден конфигурационный файл."})
+    try:
+        with open(CONFIG_PLAN_FILES_PATH, "r") as file:
+            for line in file:
+                # TODO return curriculum_importer.py:insertInDataBase(line)
+                pass
+    except FileNotFoundError:
+        return jsonify(
+            {"success": False, "errortype": "config file access", "message": "Не найден конфигурационный файл."})
 
 
 def generate_pdf_file_and_upload():
@@ -64,7 +79,8 @@ def generate_pdf_file_and_upload():
         pass
 
 
-def check_report_state(year: int, semester: int, mode: str, warned=False, use_current=False, file=None, pract_data=None):
+def check_report_state(year: int, semester: int, mode: str, warned=False, use_current=False, file=None,
+        pract_data=None):
     """
     Проверка состояния отчёта за year год и semester семестр.
 
@@ -78,7 +94,34 @@ def check_report_state(year: int, semester: int, mode: str, warned=False, use_cu
 
     @return: json / render_template().
     """
-    pass
+
+    def handle_load_or_save(mode, year, semester, file=None, pract_data=None):
+        if mode == 'load':
+            return load_new_report(year, semester, file)
+        elif mode == 'save':
+            return generate_report(year, semester, pract_data)
+
+    report_record = report_state.get_status(year, semester)
+
+    if report_record is None:
+        return handle_load_or_save(mode, year, semester, file, pract_data)
+    else:
+        report_state = report_record[3]
+
+        if report_state == 0 and use_current:
+            global current_file_path
+            current_file_path = report_record[4]
+            return render_template('second_state.html', year=report_record[1], semester=report_record[2])
+        elif (report_state == 0 or report_state == 1) and warned:
+            return handle_load_or_save(mode, year, semester, file, pract_data)
+        elif report_state == 0:
+            return jsonify({"success": False, "errortype": "report has state 0",
+                "message":             "Данный отчёт уже был сформирован. Сформировать новый или использовать текущий?",
+                "buttons":             {"first": "Новый", "second": "Текущий"}})
+        elif report_state == 1:
+            return jsonify({"success": False, "errortype": "report has state 1",
+                "message":             "Данный отчёт уже был добавлен на сервер. Сформировать заново?",
+                "buttons":             {"first": "Нет", "second": "Да"}})
 
 
 def generate_report(year, semester, pract_data=None):
@@ -91,7 +134,20 @@ def generate_report(year, semester, pract_data=None):
 
     @return: json / render_template().
     """
-    pass
+    if pract_data is None:
+        groups = curriculum_getter.get_curriculum_data(year, semester, only_pract=True)
+        return jsonify({"success": False, "errortype": "practice info needed", "groups": groups})
+    else:
+        curriculum_data = curriculum_getter.get_curriculum_data(year, semester)  # TODO: check curriculum_data
+        report_path = 'doc/' + generate_report_name(year, semester)
+        if report_generator.report(year, semester, report_path, curriculum_data, pract_data):
+            global current_file_path
+            current_file_path = report_path
+            report_state.set_status(year, semester, 0, report_path)
+            return render_template('second_state.html', year=year, semester=semester)
+        else:
+            return jsonify(
+                {"success": False, "errortype": "report generation", "message": "Ошибка при формировании отчёта"})
 
 
 def load_new_report(year, semester, file):
