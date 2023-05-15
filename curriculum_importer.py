@@ -57,7 +57,8 @@ if (os.path.isfile("config.txt")):
         dirId = cur.fetchone()
 
         # функция для отправки данных предмета в БД
-        def insertInDataBase(subjectName, accredType, semester, pract, accredCol):
+        # def insertInDataBase(subjectName, accredType, semester, pract, accredCol):
+        def insertInDataBase(plan_file_path):
 
             # проверяем наличие указанное типа аттестации в выбранном семестре; запоминаем Идентификатор предмета
             if (sh.cell_value(j, accredCol) != ''):

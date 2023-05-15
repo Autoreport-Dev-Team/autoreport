@@ -1,8 +1,12 @@
+import os
 import re
 
+import flask
+
+import curriculum_importer
 from autoreport_config import CONFIG_PLAN_FILES_PATH
-from docx2pdf import convert
-from flask import send_from_directory, jsonify, render_template
+import docx2pdf
+from flask import jsonify, render_template, send_file
 import requests
 
 import curriculum_getter
@@ -39,14 +43,13 @@ def update_curriculum():
     try:
         with open(CONFIG_PLAN_FILES_PATH, "r") as file:
             for line in file:
-                # TODO return curriculum_importer.py:insertInDataBase(line)
-                pass
+                return curriculum_importer.insertInDataBase(line)
     except FileNotFoundError:
         return jsonify(
             {"success": False, "errortype": "config file access", "message": "Не найден конфигурационный файл."})
 
 
-def generate_pdf_file_and_upload():
+def generate_pdf_file_and_upload(year: int, semester: int):
     """
     Генерация итогового отчёта (в формате .pdf) и его загрузка на сайт ИМИТ'а.
 
@@ -54,16 +57,25 @@ def generate_pdf_file_and_upload():
     """
     global current_file_path
 
-    # TODO: check current_file_path
+    if current_file_path == '' or not os.path.exists(current_file_path):
+        return jsonify({"success": False, "errortype": "wrong current file path", "message": "Отчёт не найден."})
 
     new_pdf_name = current_file_path[:current_file_path.rfind('.')] + '.pdf'
 
-    convert(current_file_path, new_pdf_name)
+    docx2pdf.convert(current_file_path, new_pdf_name)
 
-    # TODO: check pdf file
+    if os.path.isfile(new_pdf_name) and os.path.getsize(new_pdf_name) > 0:
+        file_ext = os.path.splitext(new_pdf_name)[1]
+        if file_ext == '.pdf':
+            pass
+        else:
+            return jsonify({{"success": False, "errortype": "report convert",
+                            "message": "Произошла ошибка при конвертации .pdf отчёта."}})
+    else:
+        return jsonify({{"success": False, "errortype": "report convert",
+                        "message": "Произошла ошибка при конвертации .pdf отчёта."}})
 
-    # TODO: url
-    url = '/fm/add'
+    url = 'https://imit.petrsu.ru/fm/add'
 
     data = {}
 
@@ -71,24 +83,29 @@ def generate_pdf_file_and_upload():
 
     response = requests.post(url, data=data, files=file)
 
-    if response.status_code == 200:
-        # TODO: return something good
-        pass
+    if response.status_code == 200 and response.json().get("result") == "success":
+        if not report_status.set_status(year, semester, 1, new_pdf_name):
+            return jsonify({"success": False, "errortype": "db no connection", "message": "Нет ответа от базы данных."})
+        else:
+            return jsonify({"success": True,
+                            "message": "Итоговый отчёт успешно сформирован и добавлен на сервер ИМИТ."})
     else:
-        # TODO: return something bad
-        pass
+        return jsonify({"success": False, "errortype": "adding pdf to IMIT",
+                        "message": "Ошибка при добавлении итогового отчёта на сервер ИМИТ."})
 
 
 def check_report_state(year: int, semester: int, mode: str, warned=False, use_current=False, file=None,
-        pract_data=None):
+                       pract_data=None):
     """
     Проверка состояния отчёта за year год и semester семестр.
 
     @param year: Год, за который сформирован/загружен отчёт.
     @param semester: Семестр, за который сформирован/загружен отчёт.
     @param mode: Режим работы: загрузка или генерация.
-    @param warned: Флаг для определения ответа пользователя на предупреждение; если warned = True - значит пользователь предупреждён и всё равно хочет продолжить.
-    @param use_current: Флаг для определения ответа пользователя на предупреждение; если use_current = True - значит пользователь хочет использовать уже существующий отчёт в формате .doc.
+    @param warned: Флаг для определения ответа пользователя на предупреждение; если warned = True - значит пользователь
+    предупреждён и всё равно хочет продолжить.
+    @param use_current: Флаг для определения ответа пользователя на предупреждение; если use_current = True - значит
+    пользователь хочет использовать уже существующий отчёт в формате .doc.
     @param file: Файл, загруженный пользователем (для загрузки отчёта).
     @param pract_data: Информация о практиках, введённая пользователем.
 
@@ -103,7 +120,9 @@ def check_report_state(year: int, semester: int, mode: str, warned=False, use_cu
 
     report_record = report_status.get_status(year, semester)
 
-    if report_record is None:
+    if isinstance(report_record, flask.wrappers.Response):
+        return report_record
+    elif report_record is None:
         return handle_load_or_save(mode, year, semester, file, pract_data)
     else:
         report_state = report_record[3]
@@ -116,12 +135,12 @@ def check_report_state(year: int, semester: int, mode: str, warned=False, use_cu
             return handle_load_or_save(mode, year, semester, file, pract_data)
         elif report_state == 0:
             return jsonify({"success": False, "errortype": "report has state 0",
-                "message":             "Данный отчёт уже был сформирован. Сформировать новый или использовать текущий?",
-                "buttons":             {"first": "Новый", "second": "Текущий"}})
+                            "message": "Данный отчёт уже был сформирован. Сформировать новый или использовать текущий?",
+                            "buttons": {"first": "Новый", "second": "Текущий"}})
         elif report_state == 1:
             return jsonify({"success": False, "errortype": "report has state 1",
-                "message":             "Данный отчёт уже был добавлен на сервер. Сформировать заново?",
-                "buttons":             {"first": "Нет", "second": "Да"}})
+                            "message": "Данный отчёт уже был добавлен на сервер. Сформировать заново?",
+                            "buttons": {"first": "Нет", "second": "Да"}})
 
 
 def generate_report(year, semester, pract_data=None):
@@ -136,18 +155,27 @@ def generate_report(year, semester, pract_data=None):
     """
     if pract_data is None:
         groups = curriculum_getter.get_curriculum_data(year, semester, only_pract=True)
+
+        if isinstance(groups, flask.wrappers.Response):
+            return groups
+
         return jsonify({"success": False, "errortype": "practice info needed", "groups": groups})
     else:
-        curriculum_data = curriculum_getter.get_curriculum_data(year, semester)  # TODO: check curriculum_data
+        curriculum_data = curriculum_getter.get_curriculum_data(year, semester)
+
+        if isinstance(curriculum_data, flask.wrappers.Response):
+            return curriculum_data
+
         report_path = 'doc/' + generate_report_name(year, semester)
+
         if report_generator.report(year, semester, report_path, curriculum_data, pract_data):
+            report_status.set_status(year, semester, 0, report_path)
             global current_file_path
             current_file_path = report_path
-            report_status.set_status(year, semester, 0, report_path)
             return render_template('second_state.html', year=year, semester=semester)
         else:
-            return jsonify(
-                {"success": False, "errortype": "report generation", "message": "Ошибка при формировании отчёта"})
+            return jsonify({"success": False, "errortype": "report generation",
+                            "message": "Ошибка при формировании отчёта"})
 
 
 def load_new_report(year, semester, file):
@@ -160,7 +188,21 @@ def load_new_report(year, semester, file):
 
     @return: json / render_template().
     """
-    pass
+    global current_file_path
+    report_path = 'doc/' + generate_report_name(year, semester)
+
+    try:
+        file.save(report_path)
+        current_file_path = report_path
+
+        if report_status.set_status(year, semester, 0, report_path):
+            return render_template('second_state.html', year=year, semester=semester)
+        else:
+            return jsonify({"success": False, "errortype": "db no connection", "message": "Нет ответа от базы данных."})
+
+    except Exception as e:
+        return jsonify({"success": False, "errortype": "saving loaded file",
+                        "message": "Отчёт не был сохранён.", "exception": type(e)})
 
 
 def load_changed_report(year, semester, file):
@@ -173,7 +215,17 @@ def load_changed_report(year, semester, file):
 
     @return: json.
     """
-    pass
+    global current_file_path
+
+    if current_file_path == '':
+        return jsonify({"success": False, "errortype": "wrong current file path", "message": "Отчёт не найден."})
+
+    try:
+        file.save(current_file_path)
+        return render_template('second_state.html', year=year, semester=semester)
+    except Exception as e:
+        return jsonify({"success": False, "errortype": "saving loaded file",
+                        "message": "Отчёт не был сохранён.", "exception": type(e)})
 
 
 def download_report():
@@ -183,5 +235,9 @@ def download_report():
     @return: send_from_directory().
     """
     global current_file_path
+
+    if current_file_path == '' or not os.path.exists(current_file_path):
+        return jsonify({"success": False, "errortype": "wrong current file path", "message": "Отчёт не найден."})
+
     # FIXME: security warning on using 'send_from_directory' function
-    return send_from_directory(directory='doc', path=current_file_path, as_attachment=True, mimetype='application/pdf')
+    return send_file(current_file_path, as_attachment=True, mimetype='application/doc')
