@@ -1,18 +1,5 @@
 CREATE DATABASE `db` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci */
 
--- db.tbl_links definition
-
-CREATE TABLE `tbl_links` (
-  `linkId` int(11) NOT NULL AUTO_INCREMENT,
-  `dirId` int(11) NOT NULL,
-  `subjectId` int(11) NOT NULL,
-  PRIMARY KEY (`linkId`),
-  UNIQUE KEY `tbl_links_un` (`dirId`,`subjectId`),
-  KEY `subjectData` (`subjectId`),
-  CONSTRAINT `dirData` FOREIGN KEY (`dirId`) REFERENCES `tbl_directions` (`dirId`),
-  CONSTRAINT `subjectData` FOREIGN KEY (`subjectId`) REFERENCES `tbl_subjects` (`subjectId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
 -- db.tbl_directions definition
 
 CREATE TABLE `tbl_directions` (
@@ -33,6 +20,19 @@ CREATE TABLE `tbl_subjects` (
   `pract` tinyint(1) DEFAULT NULL,
   PRIMARY KEY (`subjectId`),
   UNIQUE KEY `tbl_subjects_un` (`semester`,`accred`,`subjectName`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- db.tbl_links definition
+
+CREATE TABLE `tbl_links` (
+  `linkId` int(11) NOT NULL AUTO_INCREMENT,
+  `dirId` int(11) NOT NULL,
+  `subjectId` int(11) NOT NULL,
+  PRIMARY KEY (`linkId`),
+  UNIQUE KEY `tbl_links_un` (`dirId`,`subjectId`),
+  KEY `subjectData` (`subjectId`),
+  CONSTRAINT `dirData` FOREIGN KEY (`dirId`) REFERENCES `tbl_directions` (`dirId`),
+  CONSTRAINT `subjectData` FOREIGN KEY (`subjectId`) REFERENCES `tbl_subjects` (`subjectId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- db.tbl_reports definition
