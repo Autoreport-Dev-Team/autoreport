@@ -43,7 +43,9 @@ def update_curriculum():
     try:
         with open(CONFIG_PLAN_FILES_PATH, "r") as file:
             for line in file:
-                return curriculum_importer.insertInDataBase(line)
+                response = curriculum_importer.insertInDataBase(line)
+                if response is not None:
+                    return response
     except FileNotFoundError:
         return jsonify(
             {"success": False, "errortype": "config file access", "message": "Не найден конфигурационный файл."})
