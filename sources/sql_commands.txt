@@ -1,12 +1,47 @@
-create table tbl_links (
-linkId int not null auto_increment,
-dirId int not null,
-subjectId int not null,
-CONSTRAINT dirData FOREIGN KEY(dirId) REFERENCES tbl_directions(dirId),
-CONSTRAINT subjectData FOREIGN KEY (subjectId) REFERENCES tbl_subjects(subjectId),
-primary key(linkId));
+CREATE DATABASE `db` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci */
 
-create table tbl_subjects(subjectId int not null auto_increment, subjectName varchar(200) not null,  accred varchar(12) not null, semester tinyint(1), pract tinyint(1), primary key(subjectId), unique(subjectName, accred, semester));
+-- db.tbl_directions definition
 
-create table tbl_directions(dirId int not null auto_increment, dirName varchar(50), adyear int not null, primary key(dirId), unique(dirName, adyear));
+CREATE TABLE `tbl_directions` (
+  `dirId` int(11) NOT NULL AUTO_INCREMENT,
+  `dirName` varchar(50) DEFAULT NULL,
+  `adyear` int(11) NOT NULL,
+  PRIMARY KEY (`dirId`),
+  UNIQUE KEY `dirName` (`dirName`,`adyear`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- db.tbl_subjects definition
+
+CREATE TABLE `tbl_subjects` (
+  `subjectId` int(11) NOT NULL AUTO_INCREMENT,
+  `subjectName` varchar(200) NOT NULL,
+  `accred` varchar(12) NOT NULL,
+  `semester` tinyint(1) DEFAULT NULL,
+  `pract` tinyint(1) DEFAULT NULL,
+  PRIMARY KEY (`subjectId`),
+  UNIQUE KEY `tbl_subjects_un` (`semester`,`accred`,`subjectName`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- db.tbl_links definition
+
+CREATE TABLE `tbl_links` (
+  `linkId` int(11) NOT NULL AUTO_INCREMENT,
+  `dirId` int(11) NOT NULL,
+  `subjectId` int(11) NOT NULL,
+  PRIMARY KEY (`linkId`),
+  UNIQUE KEY `tbl_links_un` (`dirId`,`subjectId`),
+  KEY `subjectData` (`subjectId`),
+  CONSTRAINT `dirData` FOREIGN KEY (`dirId`) REFERENCES `tbl_directions` (`dirId`),
+  CONSTRAINT `subjectData` FOREIGN KEY (`subjectId`) REFERENCES `tbl_subjects` (`subjectId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- db.tbl_reports definition
+
+CREATE TABLE `tbl_reports` (
+  `repId` int(11) NOT NULL,
+  `repYear` int(11) DEFAULT NULL,
+  `repSem` int(11) DEFAULT NULL,
+  `repStatus` tinyint(1) DEFAULT NULL,
+  `repPath` varchar(1000) DEFAULT NULL,
+  PRIMARY KEY (`repId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
