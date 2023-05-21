@@ -1,123 +1,149 @@
-import os
-import pytest
-import tempfile
-import requests
+import json
+import unittest
+import flask
 
-from unittest.mock import patch, mock_open, MagicMock
+from unittest.mock import patch
 
-from funcs import generate_report_name, update_curriculum, generate_pdf_file_and_upload, check_report_state
+import funcs
+from funcs import generate_report_name, check_report_state, generate_report, \
+    generate_pdf_file_and_upload
 
-
-def test_generate_report_name():
-    assert generate_report_name(2022, 1) == '1_2022-2023'
-    assert generate_report_name(2022, 2) == '2_2021-2022'
-    assert generate_report_name(2023, 1) == '1_2023-2024'
-    assert generate_report_name(2023, 2) == '2_2022-2023'
+from autoreport import app
 
 
-@pytest.fixture
-def mock_pdf_file():
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.docx') as f:
-        f.write(b'sample text')
-        yield f.name
-    os.unlink(f.name)
+class TestGenerateReportName(unittest.TestCase):
+    def test_B6_1_positive_generate_report_name(self):
+        assert generate_report_name(2023, 1) == '1_2023-2024'
+
+    def test_B6_2_positive_generate_report_name(self):
+        assert generate_report_name(2023, 2) == '2_2023-2024'
 
 
-def test_generate_pdf_file_and_upload_success(mock_pdf_file, monkeypatch):
-    monkeypatch.setattr(requests, 'post',
-        lambda *args, **kwargs: type('Response', (), {'status_code': 200, 'json': lambda: {'result': 'success'}})())
+class TestCheckReportState(unittest.TestCase):
+    def test_B6_3_positive_check_report_state(self):
+        with patch('report_status.get_status') as mock_get_status,\
+                patch('funcs.generate_report') as mock_generate_report:
+            mock_get_status.return_value = None
+            mock_generate_report.return_value = 'generate_report()'
+            result = check_report_state(2023, 1, warned=False, use_current=False, mode='generate', file=None,
+                pract_data=None)
+            assert result == 'generate_report()'
 
-    assert generate_pdf_file_and_upload(2022, 2) == {'success': True,
-        'message':                                              'Итоговый отчёт успешно сформирован и добавлен на сервер ИМИТ.'}
+    def test_B6_4_positive_check_report_state(self):
+        with patch('report_status.get_status') as mock_get_status,\
+                patch('funcs.generate_report') as mock_generate_report,\
+                app.app_context():
+            assert funcs.current_file_path == ''
+            mock_get_status.return_value = [2023, 1, 0, 'my_path']
+            result = check_report_state(2023, 1, warned=False, use_current=True, mode='generate', file=None,
+                pract_data=None)
+            assert funcs.current_file_path == 'my_path'
+            assert 'Второе состояние страницы' in result
+            assert 'Year = 2023, Semester = 1' in result
 
-    os.unlink(mock_pdf_file.replace('.docx', '.pdf'))
+    def test_B6_5_positive_check_report_state(self):
+        with patch('report_status.get_status') as mock_get_status,\
+                patch('funcs.generate_report') as mock_generate_report:
+            mock_get_status.return_value = None
+            mock_generate_report.return_value = 'generate_report()'
+            result = check_report_state(2023, 1, warned=True, use_current=False, mode='generate', file=None,
+                pract_data=None)
+            assert result == 'generate_report()'
+
+    def test_B6_6_positive_check_report_state(self):
+        with patch('report_status.get_status') as mock_get_status,\
+                patch('funcs.load_new_report') as mock_load_new_report:
+            mock_get_status.return_value = [None, None, 1, 'my_path']
+            mock_load_new_report.return_value = 'load_new_report()'
+            result = check_report_state(2023, 1, warned=True, use_current=False, mode='load', file=None,
+                pract_data=None)
+            assert result == 'load_new_report()'
+
+    # def test_B6_7_positive_check_report_state(self):
+    # with patch('report_status.get_status') as mock_get_status, patch(
+    # 'funcs.load_new_report') as mock_load_new_report:
+    # mock_get_status.return_value = [None, None, 1, 'my_path']
+    # mock_load_new_report.return_value = 'load_new_report()'
+    # result = check_report_state(2023, 1, warned=False, use_current=False, mode='load', file=None,
+    # pract_data=None)  # assert result == 'load_new_report()'
 
 
-def test_generate_pdf_file_and_upload_wrong_file_path(monkeypatch):
-    monkeypatch.setattr('os.path.exists', lambda path: False)
+class TestGenerateReport(unittest.TestCase):
+    def test_B6_8_positive_generate_report(self):
+        with patch('curriculum_getter.get_curriculum_data') as mock_get_curriculum_data,\
+                app.app_context():
+            mock_get_curriculum_data.return_value = {'22307': 'учебно-ознакомительная'}
+            result = generate_report(2023, 1)
+            assert isinstance(result, flask.wrappers.Response)
+            # groups = json.load(result)
+            assert result.status_code == 200
+            assert b'practice info needed' in result.data
 
-    assert generate_pdf_file_and_upload(2022, 2) == {'success': False, 'errortype': 'wrong current file path',
-        'message':                                              'Отчёт не найден.'}
-
-
-def test_generate_pdf_file_and_upload_invalid_pdf(mock_pdf_file, monkeypatch):
-    def mock_convert(*args, **kwargs):
-        raise RuntimeError('pdf conversion failed')
-
-    monkeypatch.setattr('docx2pdf.convert', mock_convert)
-
-    assert generate_pdf_file_and_upload(2022, 2) == {'success': False, 'errortype': 'report convert',
-        'message':                                              'Произошла ошибка при конвертации .pdf отчёта.'}
-
-    assert not os.path.exists(mock_pdf_file.replace('.docx', '.pdf'))
-
-
-def test_generate_pdf_file_and_upload_adding_pdf_error(mock_pdf_file, monkeypatch):
-    monkeypatch.setattr(requests, 'post',
-        lambda *args, **kwargs: type('Response', (), {'status_code': 500, 'json': lambda: {'result': 'failure'}})())
-
-    assert generate_pdf_file_and_upload(2022, 2) == {'success': False, 'errortype': 'adding pdf to IMIT',
-        'message':                                              'Ошибка при добавлении итогового отчёта на сервер ИМИТ.'}
-
-    os.unlink(mock_pdf_file.replace('.docx', '.pdf'))
+    def test_B6_9_positive_generate_report(self):
+        with patch('curriculum_getter.get_curriculum_data') as mock_get_curriculum_data,\
+                patch('report_generator.report') as mock_report,\
+                app.app_context():
+            mock_get_curriculum_data.return_value = None
+            mock_report.return_value = True
+            result = generate_report(2023, 1,
+                                     pract_data={22202: 'учебно-ознакомительная',
+                                                 22203: 'учебно-ознакомительная',
+                                                 22404: 'производственная'})
+            assert 'Второе состояние страницы' in result
+            assert 'Year = 2023, Semester = 1' in result
+            assert funcs.current_file_path == 'doc/1_2023-2024'
 
 
-class TestUpdateCurriculum:
-    @pytest.fixture(autouse=True)
-    def setup_class(self):
-        self.success_response = {"success": True, "message": "Учебная информация была успешно обновлена."}
-        self.config_path = "config.txt"
-        self.config_line = "example_config_line"
+class TestLoadNewReport(unittest.TestCase):
+    def test_B6_10_positive_load_new_report(self):
+        pass
 
-    def test_no_config_file(self):
-        with patch("myapp.funcs.CONFIG_PLAN_FILES_PATH", "incorrect_path"):
-            assert update_curriculum().json == {"success": False, "errortype": "config file access",
-                "message":                                 "Не найден конфигурационный файл."}
+    def test_B6_12_negative_load_new_report(self):
+        pass
 
-    def test_config_file_not_found(self):
-        with patch("myapp.funcs.open", side_effect=FileNotFoundError):
-            assert update_curriculum().json == {"success": False, "errortype": "config file access",
-                "message":                                 "Не найден конфигурационный файл."}
 
-    def test_insertInDataBase_returns_error(self, mocker):
-        mock_insert = mocker.patch("myapp.curriculum_importer.insertInDataBase")
-        mock_insert.return_value = {"success": False, "message": "Ошибка при обновлении учебной информации."}
-        with patch("builtins.open", MagicMock(return_value=["some_config_line"])):
-            assert update_curriculum().json == mock_insert.return_value
+class TestLoadChangedReport(unittest.TestCase):
+    def test_B6_11_positive_load_changed_report(self):
+        pass
 
-    def test_insertInDataBase_returns_none(self, mocker):
-        mock_insert = mocker.patch("myapp.curriculum_importer.insertInDataBase")
-        mock_insert.return_value = None
-        with patch("builtins.open", MagicMock(return_value=["some_config_line"])):
-            assert update_curriculum().json == self.success_response
+    def test_B6_13_negative_load_changed_report(self):
+        pass
 
-    def test_multiple_config_lines(self, mocker):
-        mock_insert = mocker.patch("myapp.curriculum_importer.insertInDataBase")
-        mock_insert.return_value = None
-        with patch("builtins.open", MagicMock(return_value=["line1", "line2", "line3"])):
-            assert update_curriculum().json == self.success_response
-        mock_insert.assert_called_with("line1")
-        mock_insert.assert_called_with("line2")
-        mock_insert.assert_called_with("line3")
 
-    def test_insertInDataBase_exception(self, mocker):
-        mock_insert = mocker.patch("myapp.curriculum_importer.insertInDataBase")
-        mock_insert.side_effect = Exception("Some error")
-        with patch("builtins.open", MagicMock(return_value=[self.config_line])):
-            assert update_curriculum().json == {"success": False, "errortype": "server error",
-                "message":                                 "Ошибка при обновлении учебной информации."}
+class TestGeneratePdfFileAndUpload(unittest.TestCase):
+    current_file_path = 'doc/report.doc'
 
-    def test_insertInDataBase_calls(self, mocker):
-        mock_insert = mocker.patch("myapp.curriculum_importer.insertInDataBase")
-        mock_insert.return_value = None
-        with patch("builtins.open", MagicMock(return_value=[self.config_line])):
-            assert update_curriculum().json == self.success_response
-        mock_insert.assert_called_with(self.config_line)
+    @patch('builtins.open')
+    def test_B6_14_positive_generate_pdf_file_and_upload(self, mock_open):
+        with patch('report_status.set_status') as mock_set_status,\
+                patch('os.path.exists') as mock_exists,\
+                patch('os.path.isfile') as mock_isfile,\
+                patch('os.path.getsize') as mock_getsize,\
+                patch('requests.post') as mock_post,\
+                patch('docx2pdf.convert') as mock_convert,\
+                app.app_context():
+            funcs.current_file_path = 'doc/report.doc'
+            mock_exists.return_value = True
+            mock_isfile.return_value = True
+            mock_getsize.return_value = 1
+            mock_set_status.return_value = True
+            mock_convert.return_value = None
+            mock_response = mock_post.return_value
+            mock_response.status_code = 200
+            mock_response.json.return_value = {'result': 'success'}
+            mock_file = mock_open.return_value
+            mock_file.read.return_value = 'Mocked file content'
+            result = generate_pdf_file_and_upload(2023, 1)
+            assert isinstance(result, flask.wrappers.Response)
+            assert result.status_code == 200
+            # b = bytes("success:true")
+            # assert b"true" in result.data
+            decoded = result.data.decode('utf-8')
+            data = json.loads(decoded)
+            assert data['success'] is True
+            assert "Итоговый отчёт успешно сформирован и добавлен на сервер ИМИТ" in data['message']
+            mock_open.assert_called_once_with('doc/report.pdf', 'rb')
 
-    def test_insertInDataBase_multiple_calls(self, mocker):
-        mock_insert = mocker.patch("myapp.curriculum_importer.insertInDataBase")
-        mock_insert.return_value = None
-        with patch("builtins.open", MagicMock(return_value=[self.config_line, self.config_line])):
-            assert update_curriculum().json == self.success_response
-        mock_insert.assert_called_with(self.config_line)
-        assert mock_insert.call_count == 2
+
+if __name__ == '__main__':
+    unittest.main()

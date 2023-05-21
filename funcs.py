@@ -1,17 +1,16 @@
 import os
 import re
 
-import flask
-
-import curriculum_importer
-from autoreport_config import CONFIG_PLAN_FILES_PATH
 import docx2pdf
-from flask import jsonify, render_template, send_file
+import flask
 import requests
+from flask import jsonify, render_template, send_file
 
 import curriculum_getter
+import curriculum_importer
 import report_generator
 import report_status
+from autoreport_config import CONFIG_PLAN_FILES_PATH
 
 current_file_path = ""
 
@@ -25,8 +24,7 @@ def generate_report_name(year: int, semester: int):
 
     @return: Новое название файла.
     """
-    years = f'{year}-{year + 1}' if semester == 1 else f'{year - 1}-{year}'
-    return f'{semester}_{years}'
+    return f'{semester}_{year}-{year + 1}'
 
 
 def update_curriculum():
@@ -117,7 +115,7 @@ def check_report_state(year: int, semester: int, mode: str, warned=False, use_cu
     def handle_load_or_save(mode, year, semester, file=None, pract_data=None):
         if mode == 'load':
             return load_new_report(year, semester, file)
-        elif mode == 'save':
+        elif mode == 'generate':
             return generate_report(year, semester, pract_data)
 
     report_record = report_status.get_status(year, semester)
@@ -127,12 +125,12 @@ def check_report_state(year: int, semester: int, mode: str, warned=False, use_cu
     elif report_record is None:
         return handle_load_or_save(mode, year, semester, file, pract_data)
     else:
-        report_state = report_record[3]
+        report_state = report_record[2]
 
         if report_state == 0 and use_current:
             global current_file_path
-            current_file_path = report_record[4]
-            return render_template('second_state.html', year=report_record[1], semester=report_record[2])
+            current_file_path = report_record[3]
+            return render_template('using_report.html', year=report_record[0], semester=report_record[1])
         elif (report_state == 0 or report_state == 1) and warned:
             return handle_load_or_save(mode, year, semester, file, pract_data)
         elif report_state == 0:
@@ -174,7 +172,7 @@ def generate_report(year, semester, pract_data=None):
             report_status.set_status(year, semester, 0, report_path)
             global current_file_path
             current_file_path = report_path
-            return render_template('second_state.html', year=year, semester=semester)
+            return render_template('using_report.html', year=year, semester=semester)
         else:
             return jsonify({"success": False, "errortype": "report generation",
                             "message": "Ошибка при формировании отчёта"})
@@ -203,6 +201,7 @@ def load_new_report(year, semester, file):
             return jsonify({"success": False, "errortype": "db no connection", "message": "Нет ответа от базы данных."})
 
     except Exception as e:
+
         return jsonify({"success": False, "errortype": "saving loaded file",
                         "message": "Отчёт не был сохранён.", "exception": type(e)})
 
