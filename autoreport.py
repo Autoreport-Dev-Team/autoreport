@@ -41,6 +41,7 @@ def index():
             file = request.form.get('file')
             # return load_new_report(year, term, file)
             return render_template("report.html", type_report=type_report, name_report=name_report)
+        
     return render_template('main.html')
 
 @app.route('/report', methods=["POST", "GET"])
@@ -56,6 +57,7 @@ def web_report():
     if request.method == 'POST':
         print("post")
         values = request.form.get('type')
+        
         if values == 'download_report':
             # return download_report()
         elif values == 'upload_report':
@@ -63,6 +65,7 @@ def web_report():
             # return load_changed_report(year, term, file)
         elif values == 'add_report':
             # return generate_pdf_file_and_upload()
+            
     return render_template('report.html')
 
 # autoreport = Blueprint('autoreport', __name__, template_folder='templates', static_folder='static')
