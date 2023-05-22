@@ -1,9 +1,7 @@
-from flask import Blueprint, Flask
+#from flask import Blueprint, Flask
 from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__, template_folder='../templates')
-
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 year = None
 term = None
@@ -42,8 +40,7 @@ def index():
             file = request.form.get('file')
             # return load_new_report(year, term, file)
             return render_template("report.html", type_report=type_report, name_report=name_report)
-
-
+        
     return render_template('main.html')
 
 @app.route('/report', methods=["POST", "GET"])
@@ -58,14 +55,13 @@ def web_report():
     if request.method == 'POST':
         print("post")
         values = request.form.get('type')
-        if values == 'dowland_report':
+        if values == 'download_report':
             # return download_report()
         elif values == 'upload_report':
             file = request.form.get('file')
             # return load_changed_report(year, term, file)
-        elif values == 'upload_report':
-            file = request.form.get('file')
-            # return load_changed_report(year, term, file)
+        elif values == 'add_report':
+            # return generate_pdf_file_and_upload()
     return render_template('report.html')
 
 # autoreport = Blueprint('autoreport', __name__, template_folder='templates', static_folder='static')
