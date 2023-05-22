@@ -1,4 +1,4 @@
-#from flask import Blueprint, Flask
+# from flask import Blueprint, Flask
 from flask import Flask, render_template, request, jsonify
 
 app = Flask(__name__, template_folder='../templates')
@@ -23,14 +23,15 @@ def index():
     if request.method == 'POST':
         values = request.form.get('type')
         if values == 'upload':
-            #return update_curriculum()
+            # return update_curriculum()
             return jsonify({"success": False, "errortype": "db no connection", "message": "Нет ответа от базы данных."})
         elif values == 'report':
             type_report = "gen"
             year = request.form.get('year')
             term = request.form.get('term')
             # pract = generate_report(year, term)
-            return jsonify({"22102": "учебная", "22202": "производственная", "22301": "учебно-ознакомительная", "22303": "учебно-ознакомительная", "22305": "учебно-ознакомительная"})
+            return jsonify({"22102": "учебная", "22202": "производственная", "22301": "учебно-ознакомительная", 
+                            "22303": "учебно-ознакомительная", "22305": "учебно-ознакомительная"})
         elif values == 'gen_report':
             pract = request.form.get('pract')
             # return generate_report(year, term, pract)
