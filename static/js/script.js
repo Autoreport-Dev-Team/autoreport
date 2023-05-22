@@ -33,11 +33,11 @@ function hide_pop_up_window_pract(event, window) {
 
 }
 
-function fill_practic(prac) {
+function fill_practic(array_practic_one) {
     //
     // Заполняет диалоговое окно данными о практике и элементами для дополнения данных о практиках
     //
-    // @params pract: ьфссив с данными о практиках
+    // @params pract: массив с данными о практиках
     //
     document.getElementById('modal').style.display = 'flex';
     document.getElementById('window_3_modal').style.display = 'flex';
@@ -46,8 +46,8 @@ function fill_practic(prac) {
     str_2 = ""
     str_3 = ""
     str_4 = ""
-    //let prac=[['22102', 'Ознакомительная'],['22201','учебная'],['22202','производственная'],['22203','учебно-ознакомительная'],['22204','учебно-ознакомительная'],['22301','технологично-производственная'],['22404','производственная']]
-    prac.forEach(element => {
+    
+    array_practic_one.forEach(element => {
         if (element[0][2] == '1'){
             str_1 = str_1 + '<p class="pract_text">' + element[0] + '</p><p class="pract_text">' + element[1] + '</p><div><input type="text" class="textbox" id="textbox_time_' + element[0] + '"></div><div><input type="text" class="textbox" id="textbox_name_' + element[0] + '"></div><div><button class="delete"></button></div>'
         }
@@ -85,10 +85,10 @@ function pop_up_window(message) {
     document.getElementById('modal').style.display = 'flex';
     document.getElementById('window_1_modal').style.display = 'flex';
 
-    str_window_messag = '<p>' + message + '</p>'
-    console.log(str_window_messag)
-    window_messag = document.getElementById('window_messeg');
-    window_messag.innerHTML = str_window_messag;
+    str_window_message = '<p>' + message + '</p>'
+    console.log(str_window_message)
+    window_message = document.getElementById('window_message');
+    window_message.innerHTML = str_window_message;
 }
 function find_db(event){
     //
@@ -158,31 +158,7 @@ function find_practic(event){
 function find_report(event){
     //
     // Создает POST запрос для кнопки "Готово" для дальнейшего формирования отчёта
-    //
-      document.querySelector('#form').onsubmit = () => {
-
-          // Инициализировать новый запрос
-          const request = new XMLHttpRequest();
-          request.open('POST', '/');
-
-          // Функция обратного вызова, когда запрос завершен
-          request.onload = () => {
-
-              // Извлечение данных JSON из запроса
-              const data = JSON.parse(request.responseText);
-              var result = new Array;
-              for(var i in data)
-                result.push([i, data[i]]);
-              fill_practic(result)
-
-          }
-
-          // Добавить данные для отправки с запросом
-          const type = new FormData();
-          type.append('type', 'gen_report');
-
-          // Послать запрос
-          request.send(type);
-          return false;
-      };
+    // 
+    
+    // тут будет функция!
   }
