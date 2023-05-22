@@ -1,64 +1,95 @@
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Вторая страница</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static',filename='css/main.css') }}">
-
+    <style>
+        #myModal {
+            display: none;
+        }
+    </style>
 </head>
-
-<body>
-    <form method="post">
-        <select name="user_year">
-            <option disabled selected="selected">Выберите год</option>
-            {% for i in range(0,10):%}
-            {%set date = data - i%}
-            <option>{{ date }}</option>
-            {% endfor %}
-        </select>
-        <select name="user_term">
-            <option disabled selected="selected">Выберите семестр</option>
-            <option>Осенний</option>
-            <option>Весенний</option>
-        </select>
-        <p><input type="submit" value="Сформировать отчёт"></p>
-
+<body onload="find_date();">
+    <p class="text">Для формирования отчёта выберите год и семестр и нажмите кнопку “Сформировать отчёт”</p>
+    <form action="" method="post" class="buttons" id="form">
+        <!--<div id="selects">-->
+            <div>
+            <select name="user_year" id="user_year" required>
+                <option disabled selected="selected">Год</option>
+                </select>
+                </div>
+        <div></div>
+        <div>
+            <select name="user_term" id="user_term" required>
+                <option disabled selected="selected">Семестр</option>
+                <option value="1">Осенний</option>
+                <option value="2">Весенний</option>
+            </select>
+        </div>
+        <div>
+            <input class="button" id="update_bd" value="Обновить данные об &#13;&#10; учебных планах" type="submit" onclick="find_db();"></div>
+        <div>
+            <input class="button" id="form_report" value="Сформировать отчёт" type="submit" onclick="find_practic();">
+        </div>
+        <div>
+            <input class="button" id="dowland_report" value="Загрузить отчёт" enctype="multipart/form-data" type="submit" onclick="upload_report();"></div>
     </form>
-    <form method="post">
-
-        {% if x %}
-        <p>{{ fileName }}</p>
-        {% endif%}
-
-    </form>
-    <div id="button">
-        <form method="post">
-
-            <p><input type="submit" name="submit_button" value="Посмотреть отчёт"></p>
-
-        </form>
-        <form method="post">
-
-            <p><input type="submit" name="submit_button" value="Скачать отчёт"></p>
-
-        </form>
-        <form method="post" enctype="multipart/form-data">
-            <p><input type="file" name="file" value="1">
-                <input type="submit" name="submit_button" value="Загрузить">
-            </p>
-
-
-        </form>
+    <div id="test"></div>
+    <div id="modal">
+        <div class="hystmodal" id="window_1_modal">
+            <div class="window_1" id="window_1">
+                <div id="window_messeg"></div>
+                <button class="button_window_1" onclick="hide_pop_up_window();">Ok</button>
+            </div>
+        </div>
+        <div class="hystmodal" id="window_2_modal">
+            <div class="window_1">
+                <p>Данный отчёт уже был сформирован.<br>
+                    Сформировать новый или использовать текущий?</p>
+                <button class="button_window_1">Новый</button>
+                <button class="button_window_1">Текущий</button>
+            </div>
+        </div>
+        <div class="hystmodal" id="window_4_modal">
+            <div class="window_1">
+                <p>Данный отчёт уже был добавлен на сервер.<br>
+                    Сформировать заново?</p>
+                <button class="button_window_1">Нет</button>
+                <button class="button_window_1">Да</button>
+            </div>
+        </div>
+        <div class="hystmodal" id="window_3_modal">
+            <div class="window_2" id="window_2">
+                <p id="pract_text_1">Практики<br>
+                    весенний семестр</p>
+                <hr>
+                <div id="pract">
+                    <p>Группа</p>
+                    <p>Тип практики</p>
+                    <p>Период прохождения</p>
+                    <p>ФИО преподавателя</p>
+                    <div>
+                    </div>
+                </div>
+                <hr>
+                <div id="scroll">
+                    <p class="kurs">1 курс</p>
+                    <div id="kurs_1"></div>
+                    <p class="kurs">2 курс</p>
+                    <div id="kurs_2"></div>
+                    <p class="kurs">3 курс</p>
+                    <div id="kurs_3"></div>
+                    <p class="kurs">4 курс</p>
+                    <div id="kurs_4"></div>
+                </div>
+                <input class="button_window_1"  value="Готово" type="submit" onclick="hide_pop_up_window_pract('window_3_modal');">
+            </div>
+        </div>
     </div>
-
-    <form method="post">
-        <p><input type="submit" value="Загрузить на сервер"></p>
-
-    </form>
-
+    <script src="{{ url_for('static',filename='js/script.js') }}">
+    </script>
 </body>
-
 </html>
