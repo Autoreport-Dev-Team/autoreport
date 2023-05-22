@@ -36,7 +36,7 @@ def index():
             pract = request.form.get('pract')
             # return generate_report(year, term, pract)
             return render_template("report.html", type_report=type_report, name_report=name_report)
-        elif values == 'gen_report':
+        elif values == 'report_upload':
             print("Загрузка отчёта")
             type_report = "upload"
             file = request.form.get('file')
@@ -69,4 +69,4 @@ def web_report():
     return render_template('report.html')
 
 # autoreport = Blueprint('autoreport', __name__, template_folder='templates', static_folder='static')
-app = Flask(__name__, template_folder='templates/autoreport')
+
