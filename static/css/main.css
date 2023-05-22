@@ -1,4 +1,195 @@
-#button {
-            display: grid;
-            grid-template-columns: 30% 30% 30%
-        }
+.text {
+    text-align: center;
+    font-size: 16px;
+    font-family: 'PT Serif', sans-serif;
+}
+
+select {
+    font-family: 'PT Serif', sans-serif;
+    font-size: 14px;
+    width: 110pt;
+    border-color: #747474;
+    border-width: 1px;
+    border-radius: 3px;
+    border-style: solid;
+}
+
+
+.buttons {
+    display: grid;
+    grid-template-columns: 110pt 200pt 110pt;
+    grid-template-rows: 50% 50%;
+    margin-left: 30%;
+    margin-right: 25%;
+
+}
+
+.button {
+    padding: 0px 1px;
+    text-align: center;
+    height: 30pt;
+    width: 110pt;
+}
+
+#form_report {
+    margin-left: 60px;
+}
+
+button {
+    font-family: 'PT Serif', sans-serif;
+    font-size: 14px;
+    border-color: #747474;
+    border-width: 1px;
+    border-radius: 3px;
+    border-style: solid;
+}
+
+
+#modal {
+    background: rgba(102, 102, 102, 0.5);
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: none;
+}
+
+.hystmodal {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    /* см. ниже */
+    align-items: center;
+    z-index: 99;
+    /* Чтобы окно не прилипало к границе
+браузера установим отступы */
+
+    font-family: 'PT Serif', sans-serif;
+    font-size: 16px;
+}
+
+#window_1_modal {
+    display: none;
+}
+
+#window_2_modal {
+    display: none;
+}
+#window_3_modal {
+    display: none;
+}
+#window_4_modal {
+    display: none;
+}
+
+.window_1{
+    text-align: center;
+    background-color: white;
+    width: 400px;
+    height: 100px;
+    border-radius: 5px;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.window_2{
+    text-align: center;
+    background-color: white;
+    width: 40%;
+    height: 60%;
+    border-radius: 5px;
+    padding-left: 20px;
+    padding-right: 20px;
+    font-size: 24px;
+}
+
+.button_window_1 {
+    width: 110pt;
+    margin-right: 25px;
+    margin-left: 25px;
+}
+
+#pract, #kurs_1, #kurs_2, #kurs_3, #kurs_4{
+    display: grid;
+    grid-template-columns: 12% 22% 28% 32% 30px;
+    font-size: 14px;
+}
+
+.delete{
+    background-image: url("delete.png");
+    width: 30px;
+    height: 30px;
+    background-color: white;
+    border: 0px;
+    padding: 0;
+}
+
+hr{
+    margin: 0;
+}
+
+#pract_text_1{
+    margin: 5px;
+    margin-top: 15px;
+}
+
+.kurs{
+    margin: 3px;
+    font-size: 20px;
+}
+
+.textbox{
+    border-color: #747474;
+    border-width: 1px;
+    border-radius: 3px;
+    border-style: solid;
+}
+
+.pract_text{
+    margin: 0;
+}
+
+#scroll{
+    overflow-y: auto;
+    max-height: 60% ;
+    -ms-overflow-style: none;
+    scrollbar-width: 1px;
+}
+
+input[type="submit"]{
+    font-family: 'PT Serif', sans-serif;
+    font-size: 14px;
+    border-color: #747474;
+    border-width: 1px;
+    border-radius: 3px;
+    border-style: solid;
+}
+
+#report{
+    font-size: 24px;
+}
+
+a{
+    display: block;
+    width:300px; /*use your preferred width*/
+    margin-left:auto;
+    margin-right:auto;
+    margin-top: 50px;
+}
+
+a:active{
+    color: #090BC0
+}
+
+a:hover{
+    color: black
+}
+
+.form_button{
+width: 110px}
