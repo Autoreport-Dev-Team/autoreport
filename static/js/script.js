@@ -33,7 +33,7 @@ function hide_pop_up_window_pract(event, window) {
 
 }
 
-function fill_practic(array_practic_one) {
+function fill_practic(array_pract_one) {
     //
     // Заполняет диалоговое окно данными о практике и элементами для дополнения данных о практиках
     //
@@ -47,7 +47,7 @@ function fill_practic(array_practic_one) {
     str_3 = ""
     str_4 = ""
     
-    array_practic_one.forEach(element => {
+    array_pract_one.forEach(element => {
         if (element[0][2] == '1'){
             str_1 = str_1 + '<p class="pract_text">' + element[0] + '</p><p class="pract_text">' + element[1] + '</p><div><input type="text" class="textbox" id="textbox_time_' + element[0] + '"></div><div><input type="text" class="textbox" id="textbox_name_' + element[0] + '"></div><div><button class="delete"></button></div>'
         }
