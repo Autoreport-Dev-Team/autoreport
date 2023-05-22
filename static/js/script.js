@@ -24,7 +24,7 @@ function hide_pop_up_window(event) {
 
 }
 
-function hide_pop_up_window_pract(event, window) {
+function hide_pop_up_window_practic(event, window) {
     //
     // Скрывает диалоговое окно
     //
