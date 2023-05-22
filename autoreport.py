@@ -41,7 +41,6 @@ def index():
             file = request.form.get('file')
             # return load_new_report(year, term, file)
             return render_template("report.html", type_report=type_report, name_report=name_report)
-        
     return render_template('main.html')
 
 @app.route('/report', methods=["POST", "GET"])
@@ -49,7 +48,7 @@ def web_report():
     """
     Взаимосвязь между клиентской частью и модулем funcs.py.
     Обрабатывает POST запросы, отправленные с клиентской части
-    работает с элементами страницы отчёта
+    Работает с элементами страницы отчёта
 
     @return: вызов функций или render_template('main.html')
     """
